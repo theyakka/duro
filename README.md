@@ -20,7 +20,7 @@ Dazza has only the coolest features:
 
 # Installing
 
-**Dazza will probably require Dart 2.0+.** Dazza was developed on the 2.0 (pre-release) version of Dart but, for now, it probably works fine on 1.23+ as well.
+**Dazza require Dart 2.0+.** Dart 2.0 is awesome.
 
 To install, add the following line to the `dependencies` section of your `pubspec.yaml` file:
 
@@ -42,8 +42,8 @@ import 'package:dazza/dazza.dart';
 To define routes you need a `Router` instance:
 
 ```dart
-final router = new Router(
-  noMatchHandler: new Handler(callback: noMatchCallback),
+final router = Router(
+  noMatchHandler: Handler(callback: noMatchCallback),
 );
 ```
 
@@ -52,7 +52,7 @@ final router = new Router(
 Now you can define your routes. Routes can take the form of regular routes or can contained named parameters. Named parameters start with a colon (:). For example, `/users/:id`. To define your routes:
 
 ```dart
-router.addRoute(new RouteDefinition.withCallback("/users/:id", callback: usersRouteCallback));
+router.addRoute(RouteDefinition.withCallback("/users/:id", callback: usersRouteCallback));
 ```
 
 Route callbacks are defined as functions, such as:
@@ -69,7 +69,7 @@ Or you can define them in-line if you need:
 
 ```dart
 router.addRoute(
-  new RouteDefinition.withCallback("/users/:id",
+  RouteDefinition.withCallback("/users/:id",
       callback: (Parameters parameters, dynamic context) {
     int userId = parameters.firstInt("id");
     ...
@@ -96,10 +96,6 @@ The code here is derived from the code that was written for Fluro (https://githu
 
 The following projects use dazza:
 - Cumulus: Firebase logic made easy (by Yakka). [Link](https://github.com/theyakka/cumulus)
-
-## Who the f*ck is Yakka?
-
-Yakka is the premier Flutter agency and a kick-ass product company. We focus on the work. Our stuff is at [http://theyakka.com](http://theyakka.com). Go check it out.
 
 # Outro
 

@@ -44,7 +44,7 @@ class RouteDefinition {
     this.path, {
     @required HandlerFunc callback,
     dynamic context,
-  }) : handler = new Handler(callback: callback, context: context);
+  }) : handler = Handler(callback: callback, context: context);
 }
 
 ///
@@ -62,12 +62,12 @@ class MatchResult {
     this.statusMessage,
     Parameters parameters,
     this.context,
-  }) : this.parameters = parameters ?? new Parameters();
+  }) : this.parameters = parameters ?? Parameters();
   MatchResult.noMatch({Parameters parameters, dynamic context})
       : this.matchType = MatchStatus.noMatch,
         this.statusMessage = "Unable to match route.",
         this.route = null,
-        this.parameters = parameters ?? new Parameters(),
+        this.parameters = parameters ?? Parameters(),
         this.context = context;
 
   bool get wasMatched => matchType == MatchStatus.match;

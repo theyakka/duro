@@ -16,59 +16,65 @@ void main() {
   Router router;
 
   setUp(() {
-    router = new Router(
-      noMatchHandler: new Handler(callback: _noMatchCallback),
+    router = Router(
+      noMatchHandler: Handler(callback: _noMatchCallback),
     );
     final handler = Handler(callback: _genericMatchCallback, context: null);
     router.addRoute(RouteDefinition("/usehandler", handler: handler));
-    router.addRoute(new RouteDefinition.withCallback("/users",
-        callback: _genericMatchCallback));
-    router.addRoute(new RouteDefinition.withCallback("/users/profile",
-        callback: _profileMatchCallback));
-    router.addRoute(new RouteDefinition.withCallback("/users/:id",
-        callback: _userMatchCallback));
-    router.addRoute(new RouteDefinition.withCallback("/users/list",
-        callback: _genericMatchCallback));
-    router.addRoute(new RouteDefinition.withCallback("/gcontext",
-        callback: _contextCallback, context: _globalContextValue));
-    router.addRoute(new RouteDefinition.withCallback("/lcontext",
-        callback: _contextCallback));
+    router.addRoute(RouteDefinition.withCallback(
+      "/users",
+      callback: _genericMatchCallback,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/users/profile",
+      callback: _profileMatchCallback,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/users/:id",
+      callback: _userMatchCallback,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/users/list",
+      callback: _genericMatchCallback,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/gcontext",
+      callback: _contextCallback,
+      context: _globalContextValue,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/lcontext",
+      callback: _contextCallback,
+    ));
+    router.addRoute(RouteDefinition.withCallback(
+      "/empty",
+      callback: _emptyCallback,
+    ));
     router.addRoute(
-        RouteDefinition.withCallback("/empty", callback: _emptyCallback));
-
-    router.addRoute(
-      new RouteDefinition.withCallback("/test",
-          callback: (Parameters parameters, dynamic context) {
-        return 99;
-      }),
+      RouteDefinition.withCallback(
+        "/test",
+        callback: (Parameters parameters, dynamic context) {
+          return 99;
+        },
+      ),
     );
   });
 
   test("Long form handler gets hit correctly", () {
     final expectedResult = "abcdefg";
-    expect(
-        router
-            .handle(
-              "/users",
-              parameters: new Parameters.fromMap({
-                "expectedResult": [expectedResult],
-              }),
-            )
-            .result,
+    final params = Parameters.fromMap({
+      "expectedResult": [expectedResult],
+    });
+    expect(router.handle("/users", parameters: params).result,
         equals(expectedResult));
   });
 
   test("Handler matches non-wildcard route", () {
     final expectedResult = 200;
-    expect(
-        router
-            .handle(
-              "/users",
-              parameters: new Parameters.fromMap({
-                "expectedResult": [expectedResult],
-              }),
-            )
-            .result,
+    final params = Parameters.fromMap({
+      "expectedResult": [expectedResult],
+    });
+    expect(router.handle("/users", parameters: params).result,
         equals(expectedResult));
   });
 
@@ -98,17 +104,15 @@ void main() {
 
   test("Match querystring parameter with passed parameters", () {
     final expectedResult = "750";
-    expect(
-        router
-            .handle(
-              "/users?expectedResult=$expectedResult",
-              parameters: new Parameters.fromMap({
-                "item1": "testing",
-                "item2": "yakka",
-              }),
-            )
-            .result,
-        equals(expectedResult));
+    final params = Parameters.fromMap({
+      "item1": "testing",
+      "item2": "yakka",
+    });
+    final matchResult = router.handle(
+      "/users?expectedResult=$expectedResult",
+      parameters: params,
+    );
+    expect(matchResult.result, equals(expectedResult));
   });
 
   test("Match result from in-line callback definition", () {

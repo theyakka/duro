@@ -15,7 +15,7 @@ import 'parameters.dart';
 ///
 class RouteTreeNodeMatch {
   final RouteTreeNode node;
-  Parameters parameters = new Parameters();
+  Parameters parameters = Parameters();
 
   RouteTreeNodeMatch({@required this.node, this.parameters});
 }
@@ -49,7 +49,7 @@ class RouteTree {
         // could be affected
         throw ("Default route was already defined");
       }
-      var node = new RouteTreeNode(path, RouteTreeNodeType.component);
+      var node = RouteTreeNode(path, RouteTreeNodeType.component);
       node.routes = [route];
       _nodes.add(node);
       _hasDefaultRoute = true;
@@ -65,7 +65,7 @@ class RouteTree {
       RouteTreeNode node = _nodeForComponent(component, parent);
       if (node == null) {
         final type = _typeForComponent(component);
-        node = new RouteTreeNode(component, type);
+        node = RouteTreeNode(component, type);
         node.parent = parent;
         if (parent == null) {
           _nodes.add(node);
@@ -127,9 +127,9 @@ class RouteTree {
         bool isMatch = (node.part == pathPart || node.isParameter);
         if (isMatch) {
           RouteTreeNodeMatch parentMatch = nodeMatches[node.parent];
-          final params = parentMatch?.parameters ?? new Parameters();
+          final params = parentMatch?.parameters ?? Parameters();
           RouteTreeNodeMatch match =
-              new RouteTreeNodeMatch(node: node, parameters: params);
+              RouteTreeNodeMatch(node: node, parameters: params);
           if (node.isParameter) {
             String paramKey = node.part.substring(1);
             match.parameters.add(paramKey, pathPart);
@@ -146,8 +146,7 @@ class RouteTree {
       nodeMatches = currentMatches;
       nodesToCheck = nextNodes;
       if (currentMatches.values.length == 0) {
-        return new MatchResult.noMatch(
-            parameters: parameters, context: context);
+        return MatchResult.noMatch(parameters: parameters, context: context);
       }
     }
     List<RouteTreeNodeMatch> matches = nodeMatches.values.toList();
@@ -159,7 +158,7 @@ class RouteTree {
           nodeToUse.routes.length > 0) {
         List<RouteDefinition> routes = nodeToUse.routes;
         RouteDefinition firstMatchedRoute = routes[0];
-        MatchResult routeMatch = new MatchResult(
+        MatchResult routeMatch = MatchResult(
           route: firstMatchedRoute,
           parameters: match.parameters,
           context: context ?? firstMatchedRoute.handler.context,
@@ -168,7 +167,7 @@ class RouteTree {
         return routeMatch;
       }
     }
-    return new MatchResult.noMatch(parameters: parameters, context: context);
+    return MatchResult.noMatch(parameters: parameters, context: context);
   }
 
   void printTree() => _printSubTree();
@@ -213,8 +212,8 @@ class RouteTree {
   bool _isParameterComponent(String component) => component.startsWith(":");
 
   Map<String, List<String>> parseQueryString(String query) {
-    var search = new RegExp('([^&=]+)=?([^&]*)');
-    var params = new Map<String, List<String>>();
+    var search = RegExp('([^&=]+)=?([^&]*)');
+    var params = Map<String, List<String>>();
     if (query.startsWith('?')) query = query.substring(1);
     decode(String s) => Uri.decodeComponent(s.replaceAll('+', ' '));
     for (Match match in search.allMatches(query)) {

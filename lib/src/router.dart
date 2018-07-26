@@ -13,7 +13,7 @@ import 'tree.dart';
 
 class Router {
   static final String rootPath = "/";
-  final RouteTree _tree = new RouteTree();
+  final RouteTree _tree = RouteTree();
 
   /// The [Handler] that will be executed when a passed path cannot be matched to
   /// any defined routes.
