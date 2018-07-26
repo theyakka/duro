@@ -19,6 +19,8 @@ void main() {
     router = new Router(
       noMatchHandler: new Handler(callback: _noMatchCallback),
     );
+    final handler = Handler(callback: _genericMatchCallback, context: null);
+    router.addRoute(RouteDefinition("/usehandler", handler: handler));
     router.addRoute(new RouteDefinition.withCallback("/users",
         callback: _genericMatchCallback));
     router.addRoute(new RouteDefinition.withCallback("/users/profile",
@@ -31,6 +33,8 @@ void main() {
         callback: _contextCallback, context: _globalContextValue));
     router.addRoute(new RouteDefinition.withCallback("/lcontext",
         callback: _contextCallback));
+    router.addRoute(
+        RouteDefinition.withCallback("/empty", callback: _emptyCallback));
 
     router.addRoute(
       new RouteDefinition.withCallback("/test",
@@ -38,6 +42,20 @@ void main() {
         return 99;
       }),
     );
+  });
+
+  test("Long form handler gets hit correctly", () {
+    final expectedResult = "abcdefg";
+    expect(
+        router
+            .handle(
+              "/users",
+              parameters: new Parameters.fromMap({
+                "expectedResult": [expectedResult],
+              }),
+            )
+            .result,
+        equals(expectedResult));
   });
 
   test("Handler matches non-wildcard route", () {
@@ -65,13 +83,10 @@ void main() {
 
   test("Prioritize wildcard route over later defined non-wildcard one", () {
     final expectedResult = "testList";
-    expect(
-        router
-            .handle("/users/list",
-                parameters: new Parameters.fromMap({
-                  "expectedResult": [expectedResult],
-                }))
-            .result,
+    final params = Parameters.fromMap({
+      "expectedResult": [expectedResult],
+    });
+    expect(router.handle("/users/list", parameters: params).result,
         isNot("testList"));
   });
 
@@ -112,6 +127,11 @@ void main() {
         equals(expectedResult));
   });
 
+  test("Handler hits the no match handler", () {
+    final expectedResult = -1;
+    expect(router.handle("/notavalidpath").result, equals(expectedResult));
+  });
+
   test("Manual match fails to find non-defined route", () {
     final result = router.match("/doesnotexist");
     expect(result.matchType, equals(MatchStatus.noMatch));
@@ -131,7 +151,35 @@ void main() {
     final result = router.match("/users/55");
     expect(result.parameters.firstString("id"), equals("55"));
   });
+
+  test("Match result state indicates match correctly", () {
+    final result = router.match("/users/55");
+    expect(result.wasMatched, isTrue);
+  });
+
+  test("Match result state indicates non-match correctly", () {
+    final result = router.match("/banana");
+    expect(result.wasNotMatched, isTrue);
+  });
+
+  test("Match contains empty parameters value", () {
+    final result = router.handle("/empty");
+    expect(result.parameters.isEmpty, isTrue);
+  });
+
+  test("Match contains non-empty parameters value", () {
+    final params = Parameters.fromMap({
+      "something": "a value",
+    });
+    final result = router.handle(
+      "/empty",
+      parameters: params,
+    );
+    expect(result.parameters.isNotEmpty, isTrue);
+  });
 }
+
+_emptyCallback(Parameters parameters, dynamic context) {}
 
 dynamic _genericMatchCallback(Parameters parameters, dynamic context) {
   return parameters.first("expectedResult");

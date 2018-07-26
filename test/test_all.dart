@@ -9,12 +9,12 @@
 
 import 'package:test/test.dart';
 
-import 'core_test.dart' as core;
 import 'match_test.dart' as match;
 import 'parameters_test.dart' as parameters;
+import 'tree_test.dart' as tree;
 
 void main() {
-  group('core:', core.main);
   group('match:', match.main);
   group('parameters:', parameters.main);
+  group('tree:', tree.main);
 }

@@ -43,6 +43,12 @@ class Parameters {
   /// Will return the list of parameter values or null if it is undefined.
   List<dynamic> value(String key) => _parameters[key];
 
+  /// Will return true if no parameters have been set
+  bool get isEmpty => _parameters.isEmpty;
+
+  /// Will return true if one or more parameters have been set
+  bool get isNotEmpty => _parameters.isNotEmpty;
+
   /// Will return the parameter value.
   dynamic first(String key) => _firstValueIfExists(key);
 

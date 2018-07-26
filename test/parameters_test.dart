@@ -21,10 +21,10 @@ void main() {
       "someInt": 100,
       "someFloat": 1.5,
       "someStringBool": "true",
-      "boolAsYesString" : "yes",
-      "boolAsNoString" : "no",
-      "boolAsIntString" : "1",
-      "boolAsBadString" : "A",
+      "boolAsYesString": "yes",
+      "boolAsNoString": "no",
+      "boolAsIntString": "1",
+      "boolAsBadString": "A",
       "someStringInt": "400",
     });
   });
@@ -34,9 +34,22 @@ void main() {
     final list = <String>["a", "b", "c", "d"];
     params.setValueList(key, list);
     if (params.has(key)) {
-      expect(params.value(key), list);
+      expect(params.value(key), equals(list));
     } else {
-      fail("Value list parameter was not stored in the list of parameter values");
+      fail(
+          "Value list parameter was not stored in the list of parameter values");
+    }
+  });
+
+  test("Add list to Parameters object", () {
+    final key = "myList";
+    final list = <String>["aa", "bb", "cc"];
+    params.add(key, list);
+    if (params.has(key)) {
+      expect(params.value(key), equals(list));
+    } else {
+      fail(
+          "Value list parameter was not stored in the list of parameter values");
     }
   });
 
@@ -123,13 +136,14 @@ void main() {
 
   test("Parameters to String", () {
     final testParams = Parameters.fromMap({
-      "a" : 123,
-      "b" : "hello",
+      "a": 123,
+      "b": "hello",
       "c": ["red", "green", "blue"],
-      "d" : 1.5,
-      "e" : false,
+      "d": 1.5,
+      "e": false,
     });
-    final paramsString = "{a: [123], b: [hello], c: [red, green, blue], d: [1.5], e: [false]}";
+    final paramsString =
+        "{a: [123], b: [hello], c: [red, green, blue], d: [1.5], e: [false]}";
     expect(testParams.toString(), paramsString);
   });
 }

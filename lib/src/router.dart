@@ -44,4 +44,7 @@ class Router {
         parameters: parameters,
         context: context,
       );
+
+  /// Prints debugging information about the [RouteTree]
+  void printTree() => _tree.printTree();
 }
