@@ -1,7 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="All Tests" type="DartTestRunConfigurationType" factoryName="Dart Test">
-    <option name="filePath" value="$PROJECT_DIR$/test" />
-    <option name="scope" value="FOLDER" />
-    <method />
+    <option name="filePath" value="$PROJECT_DIR$/test/test_all.dart" />
+    <method v="2" />
   </configuration>
 </component>

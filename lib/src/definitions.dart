@@ -6,7 +6,10 @@
  * Copyright (c) 2018 Yakka, LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
-part of dazza;
+
+import 'package:meta/meta.dart';
+
+import 'parameters.dart';
 
 /// The responder when a route is matched by the router. When a match is successfully
 /// made, the [callback] handler function will be executed. [context] is an optional,
@@ -79,7 +82,7 @@ enum MatchStatus {
   noMatch,
 }
 
-enum _RouteTreeNodeType {
+enum RouteTreeNodeType {
   component,
   parameter,
 }

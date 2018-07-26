@@ -6,13 +6,13 @@
  * Copyright (c) 2018 Yakka, LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
-part of dazza;
 
 class Parameters {
   /// Storage for parameter values
   final Map<String, List<dynamic>> _parameters = {};
 
   Parameters();
+
   Parameters.fromMap(Map<String, dynamic> values) {
     values.forEach((key, val) {
       if (val is List) {
@@ -23,7 +23,8 @@ class Parameters {
     });
   }
 
-  void set(String key, List<dynamic> valueList) => _parameters[key] = valueList;
+  void setValueList(String key, List<dynamic> valueList) =>
+      _parameters[key] = valueList;
 
   void add(String key, dynamic value) => _append(key, value);
 
@@ -63,13 +64,14 @@ class Parameters {
     if (val is bool) {
       return val;
     } else if (val is String) {
-      if (val == "true" || val == "false") {
-        return val == "true";
-      } else if (val == "yes" || val == "no") {
-        return val == "yes";
+      final lowerVal = val.toLowerCase();
+      if (lowerVal == "true" || lowerVal == "false") {
+        return lowerVal == "true";
+      } else if (lowerVal == "yes" || lowerVal == "no") {
+        return lowerVal == "yes";
       } else {
         final intVal = firstInt(key);
-        if (intVal == 0 || intVal == 1) {
+        if (intVal != null && (intVal == 0 || intVal == 1)) {
           return intVal == 1 ? true : false;
         }
       }

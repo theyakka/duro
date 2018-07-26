@@ -6,26 +6,31 @@
  * Copyright (c) 2018 Yakka, LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
-part of dazza;
+
+import 'package:meta/meta.dart';
+
+import 'definitions.dart';
+import 'parameters.dart';
 
 ///
 class RouteTreeNodeMatch {
   final RouteTreeNode node;
   Parameters parameters = new Parameters();
+
   RouteTreeNodeMatch({@required this.node, this.parameters});
 }
 
 ///
 class RouteTreeNode {
   String part;
-  _RouteTreeNodeType type;
+  RouteTreeNodeType type;
   List<RouteDefinition> routes = <RouteDefinition>[];
   List<RouteTreeNode> nodes = <RouteTreeNode>[];
   RouteTreeNode parent;
 
   RouteTreeNode(this.part, this.type);
 
-  bool get isParameter => type == _RouteTreeNodeType.parameter;
+  bool get isParameter => type == RouteTreeNodeType.parameter;
 }
 
 /// Used for storing and matching
@@ -44,7 +49,7 @@ class RouteTree {
         // could be affected
         throw ("Default route was already defined");
       }
-      var node = new RouteTreeNode(path, _RouteTreeNodeType.component);
+      var node = new RouteTreeNode(path, RouteTreeNodeType.component);
       node.routes = [route];
       _nodes.add(node);
       _hasDefaultRoute = true;
@@ -59,7 +64,7 @@ class RouteTree {
       String component = pathComponents[i];
       RouteTreeNode node = _nodeForComponent(component, parent);
       if (node == null) {
-        _RouteTreeNodeType type = _typeForComponent(component);
+        final type = _typeForComponent(component);
         node = new RouteTreeNode(component, type);
         node.parent = parent;
         if (parent == null) {
@@ -196,10 +201,10 @@ class RouteTree {
     return null;
   }
 
-  _RouteTreeNodeType _typeForComponent(String component) {
-    _RouteTreeNodeType type = _RouteTreeNodeType.component;
+  RouteTreeNodeType _typeForComponent(String component) {
+    var type = RouteTreeNodeType.component;
     if (_isParameterComponent(component)) {
-      type = _RouteTreeNodeType.parameter;
+      type = RouteTreeNodeType.parameter;
     }
     return type;
   }

@@ -8,9 +8,7 @@
  */
 library dazza;
 
-import 'package:meta/meta.dart';
-
-part 'src/definitions.dart';
-part 'src/parameters.dart';
-part 'src/router.dart';
-part 'src/tree.dart';
+export 'src/definitions.dart';
+export 'src/parameters.dart';
+export 'src/router.dart';
+export 'src/tree.dart';
