@@ -3,7 +3,7 @@
  * Created by Yakka
  * https://theyakka.com
  *
- * Copyright (c) 2018 Yakka, LLC. All rights reserved.
+ * Copyright (c) 2019 Yakka LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
 
@@ -14,29 +14,28 @@ import 'parameters.dart';
 
 ///
 class RouteTreeNodeMatch {
+  RouteTreeNodeMatch({@required this.node, this.parameters});
   final RouteTreeNode node;
   Parameters parameters = Parameters();
-
-  RouteTreeNodeMatch({@required this.node, this.parameters});
 }
 
 ///
 class RouteTreeNode {
+  RouteTreeNode(this.part, this.type);
+
   String part;
   RouteTreeNodeType type;
   List<RouteDefinition> routes = <RouteDefinition>[];
   List<RouteTreeNode> nodes = <RouteTreeNode>[];
   RouteTreeNode parent;
 
-  RouteTreeNode(this.part, this.type);
-
   bool get isParameter => type == RouteTreeNodeType.parameter;
 }
 
 /// Used for storing and matching
 class RouteTree {
-  final rootPath = "/";
   final List<RouteTreeNode> _nodes = <RouteTreeNode>[];
+  final String rootPath = '/';
   bool _hasDefaultRoute = false;
 
   ///
@@ -47,26 +46,26 @@ class RouteTree {
       if (_hasDefaultRoute) {
         // throw an error because the internal consistency of the router
         // could be affected
-        throw ("Default route was already defined");
+        throw 'Default route was already defined';
       }
-      var node = RouteTreeNode(path, RouteTreeNodeType.component);
-      node.routes = [route];
+      final RouteTreeNode node =
+          RouteTreeNode(path, RouteTreeNodeType.component);
+      node.routes = <RouteDefinition>[route];
       _nodes.add(node);
       _hasDefaultRoute = true;
       return;
     }
-    if (path.startsWith("/")) {
+    if (path.startsWith('/')) {
       path = path.substring(1);
     }
-    List<String> pathComponents = path.split('/');
+    final List<String> pathComponents = path.split('/');
     RouteTreeNode parent;
     for (int i = 0; i < pathComponents.length; i++) {
-      String component = pathComponents[i];
+      final String component = pathComponents[i];
       RouteTreeNode node = _nodeForComponent(component, parent);
       if (node == null) {
-        final type = _typeForComponent(component);
-        node = RouteTreeNode(component, type);
-        node.parent = parent;
+        final RouteTreeNodeType type = _typeForComponent(component);
+        node = RouteTreeNode(component, type)..parent = parent;
         if (parent == null) {
           _nodes.add(node);
         } else {
@@ -75,7 +74,7 @@ class RouteTree {
       }
       if (i == pathComponents.length - 1) {
         if (node.routes == null) {
-          node.routes = [route];
+          node.routes = <RouteDefinition>[route];
         } else {
           node.routes.add(route);
         }
@@ -86,13 +85,13 @@ class RouteTree {
 
   MatchResult matchRouteAndHandle(String path,
       {Parameters parameters, Handler noMatchHandler, dynamic context}) {
-    MatchResult match =
+    final MatchResult match =
         matchRoute(path, parameters: parameters, context: context);
     dynamic result;
     if (match.wasMatched) {
-      result = match.route.handler.callback(match.parameters, match.context);
+      result = match.route.handler.callback(match.context);
     } else if (noMatchHandler != null) {
-      result = noMatchHandler.callback(match.parameters, match.context);
+      result = noMatchHandler.callback(match.context);
     }
     match.result = result;
     return match;
@@ -101,12 +100,12 @@ class RouteTree {
   MatchResult matchRoute(String path,
       {Parameters parameters, dynamic context}) {
     String usePath = path;
-    if (usePath.startsWith("/")) {
+    if (usePath.startsWith('/')) {
       usePath = path.substring(1);
     }
-    List<String> components = usePath.split("/");
+    List<String> components = usePath.split('/');
     if (path == rootPath) {
-      components = ["/"];
+      components = <String>['/'];
     }
 
     Map<RouteTreeNode, RouteTreeNodeMatch> nodeMatches =
@@ -119,19 +118,19 @@ class RouteTree {
       for (RouteTreeNode node in nodesToCheck) {
         String pathPart = checkComponent;
         Map<String, List<String>> queryMap;
-        if (checkComponent.contains("?")) {
-          var splitParam = checkComponent.split("?");
+        if (checkComponent.contains('?')) {
+          final List<String> splitParam = checkComponent.split('?');
           pathPart = splitParam[0];
           queryMap = parseQueryString(splitParam[1]);
         }
-        bool isMatch = (node.part == pathPart || node.isParameter);
+        final bool isMatch = node.part == pathPart || node.isParameter;
         if (isMatch) {
-          RouteTreeNodeMatch parentMatch = nodeMatches[node.parent];
-          final params = parentMatch?.parameters ?? Parameters();
-          RouteTreeNodeMatch match =
+          final RouteTreeNodeMatch parentMatch = nodeMatches[node.parent];
+          final Parameters params = parentMatch?.parameters ?? Parameters();
+          final RouteTreeNodeMatch match =
               RouteTreeNodeMatch(node: node, parameters: params);
           if (node.isParameter) {
-            String paramKey = node.part.substring(1);
+            final String paramKey = node.part.substring(1);
             match.parameters.add(paramKey, pathPart);
           }
           if (queryMap != null) {
@@ -145,7 +144,7 @@ class RouteTree {
       }
       nodeMatches = currentMatches;
       nodesToCheck = nextNodes;
-      if (currentMatches.values.length == 0) {
+      if (currentMatches.values.isEmpty) {
         return MatchResult.noMatch(parameters: parameters, context: context);
       }
     }
@@ -167,7 +166,7 @@ class RouteTree {
         return routeMatch;
       }
     }
-    return MatchResult.noMatch(parameters: parameters, context: context);
+    return MatchResult.noMatch(context: context);
   }
 
   void printTree() => _printSubTree();
@@ -211,18 +210,21 @@ class RouteTree {
   /// Is the path component a parameter
   bool _isParameterComponent(String component) => component.startsWith(":");
 
+  String _decode(String s) => Uri.decodeComponent(s.replaceAll('+', ' '));
+
   Map<String, List<String>> parseQueryString(String query) {
-    var search = RegExp('([^&=]+)=?([^&]*)');
-    var params = Map<String, List<String>>();
-    if (query.startsWith('?')) query = query.substring(1);
-    decode(String s) => Uri.decodeComponent(s.replaceAll('+', ' '));
+    final RegExp search = RegExp('([^&=]+)=?([^&]*)');
+    final Map<String, List<String>> params = <String, List<String>>{};
+    if (query.startsWith('?')) {
+      query = query.substring(1);
+    }
     for (Match match in search.allMatches(query)) {
-      String key = decode(match.group(1));
-      String value = decode(match.group(2));
+      final String key = _decode(match.group(1));
+      final String value = _decode(match.group(2));
       if (params.containsKey(key)) {
         params[key].add(value);
       } else {
-        params[key] = [value];
+        params[key] = <String>[value];
       }
     }
     return params;

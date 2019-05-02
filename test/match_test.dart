@@ -3,14 +3,14 @@
  * Created by Yakka
  * https://theyakka.com
  *
- * Copyright (c) 2018 Yakka, LLC. All rights reserved.
+ * Copyright (c) 2019 Yakka, LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
 
 import 'package:dazza/dazza.dart';
 import 'package:test/test.dart';
 
-final _globalContextValue = 12345;
+const int _globalContextValue = 12345;
 
 void main() {
   Router router;
@@ -19,26 +19,27 @@ void main() {
     router = Router(
       noMatchHandler: Handler(callback: _noMatchCallback),
     );
-    final handler = Handler(callback: _genericMatchCallback, context: null);
-    router.addRoute(RouteDefinition("/usehandler", handler: handler));
+    final Handler handler =
+        Handler(callback: _genericMatchCallback, context: null);
+    router.addRoute(RouteDefinition('/usehandler', handler: handler));
     router.addRoute(RouteDefinition.withCallback(
-      "/users",
+      '/users',
       callback: _genericMatchCallback,
     ));
     router.addRoute(RouteDefinition.withCallback(
-      "/users/profile",
+      '/users/profile',
       callback: _profileMatchCallback,
     ));
     router.addRoute(RouteDefinition.withCallback(
-      "/users/:id",
+      '/users/:id',
       callback: _userMatchCallback,
     ));
     router.addRoute(RouteDefinition.withCallback(
-      "/users/list",
+      '/users/list',
       callback: _genericMatchCallback,
     ));
     router.addRoute(RouteDefinition.withCallback(
-      "/gcontext",
+      '/gcontext',
       callback: _contextCallback,
       context: _globalContextValue,
     ));
@@ -183,24 +184,26 @@ void main() {
   });
 }
 
-_emptyCallback(Parameters parameters, dynamic context) {}
+dynamic _emptyCallback(Context context) {}
 
-dynamic _genericMatchCallback(Parameters parameters, dynamic context) {
-  return parameters.first("expectedResult");
+dynamic _genericMatchCallback(Context context) {
+  final Parameters parameters = context.parameters;
+  return parameters.first('expectedResult');
 }
 
-dynamic _userMatchCallback(Parameters parameters, dynamic context) {
-  return parameters.firstString("id");
+dynamic _userMatchCallback(Context context) {
+  final Parameters parameters = context.parameters;
+  return parameters.firstString('id');
 }
 
-dynamic _profileMatchCallback(Parameters parameters, dynamic context) {
-  return "myProfile";
+dynamic _profileMatchCallback(Context context) {
+  return 'myProfile';
 }
 
-dynamic _noMatchCallback(Parameters parameters, dynamic context) {
+dynamic _noMatchCallback(Context context) {
   return -1;
 }
 
-dynamic _contextCallback(Parameters parameters, dynamic context) {
+dynamic _contextCallback(Context context) {
   return context;
 }

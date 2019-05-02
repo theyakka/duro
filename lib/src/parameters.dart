@@ -3,58 +3,46 @@
  * Created by Yakka
  * https://theyakka.com
  *
- * Copyright (c) 2018 Yakka, LLC. All rights reserved.
+ * Copyright (c) 2019 Yakka LLC. All rights reserved.
  * See LICENSE for distribution and usage details.
  */
 
-class Parameters {
-  /// Storage for parameter values
-  final Map<String, List<dynamic>> _parameters = {};
+import 'conversions.dart';
+import 'query.dart';
+import 'value_store.dart';
 
+class Parameters extends ValueStore<String, List<dynamic>> {
   Parameters();
-
   Parameters.fromMap(Map<String, dynamic> values) {
-    values.forEach((key, val) {
+    addMap(values);
+  }
+
+  ///
+  static Parameters fromQuery(String query) => QueryParser().parse(query);
+
+  ///
+  void add(String key, dynamic value) => _append(key, value);
+
+  ///
+  void addAll(String key, List<dynamic> value) => _append(key, value);
+
+  ///
+  void addMap(Map<String, dynamic> values) {
+    values.forEach((String key, dynamic val) {
       if (val is List) {
-        _parameters[key] = val;
+        _append(key, val);
       } else {
-        _parameters[key] = [val];
+        _append(key, <dynamic>[val]);
       }
     });
   }
-
-  void setValueList(String key, List<dynamic> valueList) =>
-      _parameters[key] = valueList;
-
-  void add(String key, dynamic value) => _append(key, value);
-
-  void addAll(Parameters parameters) {
-    if (parameters != null) {
-      _parameters.addAll(parameters._parameters);
-    }
-  }
-
-  void addMap(Map<String, List<dynamic>> paramMap) =>
-      _parameters.addAll(paramMap);
-
-  /// Checks to see if the parameter exists.
-  bool has(String key) => _parameters.containsKey(key);
-
-  /// Will return the list of parameter values or null if it is undefined.
-  List<dynamic> value(String key) => _parameters[key];
-
-  /// Will return true if no parameters have been set
-  bool get isEmpty => _parameters.isEmpty;
-
-  /// Will return true if one or more parameters have been set
-  bool get isNotEmpty => _parameters.isNotEmpty;
 
   /// Will return the parameter value.
   dynamic first(String key) => _firstValueIfExists(key);
 
   /// Will return the parameter value as a String.
   String firstString(String key) {
-    final val = first(key);
+    final dynamic val = first(key);
     if (val is String) {
       return val;
     } else {
@@ -66,70 +54,33 @@ class Parameters {
   /// true, false, yes, no, 1 or 0. If the value is not one of the afforementioned
   /// values then it will return null.
   bool firstBool(String key) {
-    final val = first(key);
-    if (val is bool) {
-      return val;
-    } else if (val is String) {
-      final lowerVal = val.toLowerCase();
-      if (lowerVal == "true" || lowerVal == "false") {
-        return lowerVal == "true";
-      } else if (lowerVal == "yes" || lowerVal == "no") {
-        return lowerVal == "yes";
-      } else {
-        final intVal = firstInt(key);
-        if (intVal != null && (intVal == 0 || intVal == 1)) {
-          return intVal == 1 ? true : false;
-        }
-      }
-    }
-    return null;
+    return Conversion.boolValue(first(key));
   }
 
   /// Will return an int value for the parameter or null if the value was not
   /// able to be converted.
   int firstInt(String key) {
-    final val = first(key);
-    if (val is int) {
-      return val;
-    } else if (val is String) {
-      try {
-        return int.tryParse(_firstValueIfExists(key));
-      } catch (ex) {
-        return null;
+    return Conversion.intValue(first(key));
+  }
+
+  // internal
+  void _append(String key, dynamic val) {
+    final List<dynamic> valueList = value(key) ?? <dynamic>[];
+    if (value is List) {
+      valueList.addAll(val);
+    } else {
+      valueList.add(value);
+    }
+    set(key, valueList);
+  }
+
+  dynamic _firstValueIfExists(String key) {
+    if (has(key)) {
+      final List<dynamic> val = value(key);
+      if (val.isNotEmpty) {
+        return val.first;
       }
     }
     return null;
   }
-
-  // internal
-  void _append(String key, dynamic value) {
-    List<dynamic> valueList = _parameters[key];
-    if (valueList == null) {
-      valueList = [];
-    }
-    if (value is List) {
-      valueList.addAll(value);
-    } else {
-      valueList.add(value);
-    }
-    _parameters[key] = valueList;
-  }
-
-  dynamic _firstValueIfExists(String key) {
-    if (_parameters.containsKey(key)) {
-      final value = _parameters[key];
-      if (value.isNotEmpty) return value.first;
-    }
-    return null;
-  }
-
-  @override
-  String toString() => _parameters.toString();
-}
-
-/// Built-in parameters that will be present in the [parameters] value of any
-/// [HandlerFunc].
-class RouteParameter {
-  static String path = "_dazza_path";
-  static String routePath = "_dazza_routePath";
 }
