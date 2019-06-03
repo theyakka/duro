@@ -119,7 +119,7 @@ void main() {
   test('Bad bool value returns null', () {
     const String key = 'boolAsBadString';
     if (params.has(key)) {
-      expect(params.firstBool(key), isNull);
+      expect(params.firstBool(key), isFalse);
     } else {
       fail(
         'Parameters object is not set up correctly',

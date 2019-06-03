@@ -7,4 +7,8 @@
  * See LICENSE for distribution and usage details.
  */
 
+import 'router.dart';
+
+/// Sub-class this class to listen to [Router] events.
+/// TODO - expand
 abstract class LifecycleObserver {}

@@ -7,178 +7,120 @@
  * See LICENSE for distribution and usage details.
  */
 
-import 'package:meta/meta.dart';
+import 'package:dazza/dazza.dart';
 
+import 'context.dart';
 import 'definitions.dart';
+import 'handlers.dart';
 import 'parameters.dart';
-
-///
-class RouteTreeNodeMatch {
-  RouteTreeNodeMatch({@required this.node, this.parameters});
-  final RouteTreeNode node;
-  Parameters parameters = Parameters();
-}
-
-///
-class RouteTreeNode {
-  RouteTreeNode(this.part, this.type);
-
-  String part;
-  RouteTreeNodeType type;
-  List<RouteDefinition> routes = <RouteDefinition>[];
-  List<RouteTreeNode> nodes = <RouteTreeNode>[];
-  RouteTreeNode parent;
-
-  bool get isParameter => type == RouteTreeNodeType.parameter;
-}
+import 'tree_definitions.dart';
 
 /// Used for storing and matching
+/// TODO
 class RouteTree {
+  /// The current route tree nodes. These are created
+  /// TODO
   final List<RouteTreeNode> _nodes = <RouteTreeNode>[];
-  final String rootPath = '/';
+
+  // Fields
   bool _hasDefaultRoute = false;
 
   ///
-  void addRoute(RouteDefinition route) {
-    String path = route.path;
-    // is root/default route, just add it
-    if (path == rootPath) {
-      if (_hasDefaultRoute) {
-        // throw an error because the internal consistency of the router
-        // could be affected
-        throw 'Default route was already defined';
-      }
-      final RouteTreeNode node =
-          RouteTreeNode(path, RouteTreeNodeType.component);
-      node.routes = <RouteDefinition>[route];
-      _nodes.add(node);
-      _hasDefaultRoute = true;
-      return;
-    }
-    if (path.startsWith('/')) {
-      path = path.substring(1);
-    }
-    final List<String> pathComponents = path.split('/');
-    RouteTreeNode parent;
-    for (int i = 0; i < pathComponents.length; i++) {
-      final String component = pathComponents[i];
-      RouteTreeNode node = _nodeForComponent(component, parent);
-      if (node == null) {
-        final RouteTreeNodeType type = _typeForComponent(component);
-        node = RouteTreeNode(component, type)..parent = parent;
-        if (parent == null) {
-          _nodes.add(node);
-        } else {
-          parent.nodes.add(node);
-        }
-      }
-      if (i == pathComponents.length - 1) {
-        if (node.routes == null) {
-          node.routes = <RouteDefinition>[route];
-        } else {
-          node.routes.add(route);
-        }
-      }
-      parent = node;
-    }
-  }
-
   MatchResult matchRouteAndHandle(String path,
-      {Parameters parameters, Handler noMatchHandler, dynamic context}) {
-    final MatchResult match =
-        matchRoute(path, parameters: parameters, context: context);
+      {HandlerFunc noMatchHandler, Context context}) {
+    // check to see if there is a route that matches up to the provided path
+    final match = matchRoute(path, context: context);
     dynamic result;
     if (match.wasMatched) {
-      result = match.route.handler.callback(match.context);
+      // execute the route handler and capture the result
+      result = match.route.callback(match.context);
     } else if (noMatchHandler != null) {
-      result = noMatchHandler.callback(match.context);
+      result = noMatchHandler(match.context);
     }
     match.result = result;
     return match;
   }
 
-  MatchResult matchRoute(String path,
-      {Parameters parameters, dynamic context}) {
-    String usePath = path;
-    if (usePath.startsWith('/')) {
-      usePath = path.substring(1);
+  ///
+  MatchResult matchRoute(
+    String path, {
+    Context context,
+  }) {
+    // the parameter values. these will be populated, initially, from the
+    // values of the query string attached to the path (if any). If no query
+    // string is present, the parameters will be initially empty.
+    final parameters = Parameters.fromString(path);
+
+    // the context values
+    var matchContext = context ?? Context.empty();
+    // add the path to the context
+    final queryIndex = path.indexOf(queryPrefix);
+    var trimmedPath = queryIndex == -1 ? path : path.substring(0, queryIndex);
+    matchContext = Context.withValue(matchContext, contextKeyPath, trimmedPath);
+
+    // TODO - we can check for the root path immediately?
+
+    // remove the initial slash from the path
+    if (trimmedPath.startsWith(pathSeparator)) {
+      trimmedPath = trimmedPath.substring(1);
     }
-    List<String> components = usePath.split('/');
-    if (path == rootPath) {
-      components = <String>['/'];
+    // split the path into it's components
+    var components = trimmedPath.split(pathSeparator);
+    if (path == defaultRootPath) {
+      components = <String>[pathSeparator];
     }
 
-    Map<RouteTreeNode, RouteTreeNodeMatch> nodeMatches =
-        <RouteTreeNode, RouteTreeNodeMatch>{};
-    List<RouteTreeNode> nodesToCheck = _nodes;
-    for (String checkComponent in components) {
-      Map<RouteTreeNode, RouteTreeNodeMatch> currentMatches =
-          <RouteTreeNode, RouteTreeNodeMatch>{};
-      List<RouteTreeNode> nextNodes = <RouteTreeNode>[];
-      for (RouteTreeNode node in nodesToCheck) {
-        String pathPart = checkComponent;
-        Map<String, List<String>> queryMap;
-        if (checkComponent.contains('?')) {
-          final List<String> splitParam = checkComponent.split('?');
-          pathPart = splitParam[0];
-          queryMap = parseQueryString(splitParam[1]);
-        }
-        final bool isMatch = node.part == pathPart || node.isParameter;
+    RouteTreeNode matchedNode;
+    var nodesToCheck = _nodes;
+    for (final comp in components) {
+      matchedNode = null;
+      for (final node in nodesToCheck) {
+        final isMatch =
+            node.part == comp || node.isParameter || node.isWildcard;
         if (isMatch) {
-          final RouteTreeNodeMatch parentMatch = nodeMatches[node.parent];
-          final Parameters params = parentMatch?.parameters ?? Parameters();
-          final RouteTreeNodeMatch match =
-              RouteTreeNodeMatch(node: node, parameters: params);
           if (node.isParameter) {
-            final String paramKey = node.part.substring(1);
-            match.parameters.add(paramKey, pathPart);
+            parameters.add(node.part.substring(1), comp);
+          } else if (node.isWildcard) {
+            parameters.add(paramKeyWildcard, comp);
           }
-          if (queryMap != null) {
-            match.parameters.addMap(queryMap);
-          }
-          currentMatches[node] = match;
-          if (node.nodes != null) {
-            nextNodes.addAll(node.nodes);
-          }
+          matchedNode = node;
+          nodesToCheck = node.nodes;
+          break;
         }
       }
-      nodeMatches = currentMatches;
-      nodesToCheck = nextNodes;
-      if (currentMatches.values.isEmpty) {
-        return MatchResult.noMatch(parameters: parameters, context: context);
+      if (matchedNode == null) {
+        return MatchResult.noMatch(context: matchContext);
       }
     }
-    List<RouteTreeNodeMatch> matches = nodeMatches.values.toList();
-    if (matches.length > 0) {
-      RouteTreeNodeMatch match = matches.first;
-      RouteTreeNode nodeToUse = match.node;
-      if (nodeToUse != null &&
-          nodeToUse.routes != null &&
-          nodeToUse.routes.length > 0) {
-        List<RouteDefinition> routes = nodeToUse.routes;
-        RouteDefinition firstMatchedRoute = routes[0];
-        MatchResult routeMatch = MatchResult(
-          route: firstMatchedRoute,
-          parameters: match.parameters,
-          context: context ?? firstMatchedRoute.handler.context,
-        );
-        routeMatch.parameters.addAll(parameters);
-        return routeMatch;
+
+    if (matchedNode != null) {
+      matchContext =
+          Context.withValue(matchContext, contextKeyParameters, parameters);
+      final route = matchedNode.routes.first;
+      var finalContext = matchContext;
+      if (route.context != null) {
+        finalContext = Context.withContext(route.context, matchContext);
       }
+      return MatchResult.matched(
+        route: matchedNode.routes.first,
+        context: finalContext,
+      );
     }
-    return MatchResult.noMatch(context: context);
+
+    return MatchResult.noMatch(context: matchContext);
   }
 
+  ///
   void printTree() => _printSubTree();
 
   void _printSubTree({RouteTreeNode parent, int level = 0}) {
-    List<RouteTreeNode> nodes = parent != null ? parent.nodes : _nodes;
-    for (RouteTreeNode node in nodes) {
-      String indent = "";
-      for (int i = 0; i < level; i++) {
-        indent += "    ";
+    final nodes = parent != null ? parent.nodes : _nodes;
+    for (final node in nodes) {
+      var indent = '';
+      for (var i = 0; i < level; i++) {
+        indent += '    ';
       }
-      print("$indent${node.part}: total routes=${node.routes.length}");
+      print('$indent${node.part}: total routes=${node.routes.length}');
       if (node.nodes != null && node.nodes.length > 0) {
         _printSubTree(parent: node, level: level + 1);
       }
@@ -186,12 +128,12 @@ class RouteTree {
   }
 
   RouteTreeNode _nodeForComponent(String component, RouteTreeNode parent) {
-    List<RouteTreeNode> nodes = _nodes;
+    var nodes = _nodes;
     if (parent != null) {
       // search parent for sub-node matches
       nodes = parent.nodes;
     }
-    for (RouteTreeNode node in nodes) {
+    for (final node in nodes) {
       if (node.part == component) {
         return node;
       }
@@ -208,25 +150,52 @@ class RouteTree {
   }
 
   /// Is the path component a parameter
-  bool _isParameterComponent(String component) => component.startsWith(":");
+  bool _isParameterComponent(String component) => component.startsWith(':');
 
-  String _decode(String s) => Uri.decodeComponent(s.replaceAll('+', ' '));
-
-  Map<String, List<String>> parseQueryString(String query) {
-    final RegExp search = RegExp('([^&=]+)=?([^&]*)');
-    final Map<String, List<String>> params = <String, List<String>>{};
-    if (query.startsWith('?')) {
-      query = query.substring(1);
-    }
-    for (Match match in search.allMatches(query)) {
-      final String key = _decode(match.group(1));
-      final String value = _decode(match.group(2));
-      if (params.containsKey(key)) {
-        params[key].add(value);
-      } else {
-        params[key] = <String>[value];
+  ///
+  void addRoute(RouteDefinition route) {
+    var path = route.path;
+    // is root/default route, just add it
+    if (path == defaultRootPath) {
+      if (_hasDefaultRoute) {
+        // throw an error because the internal consistency of the router
+        // could be affected
+        throw 'Default route was already defined';
       }
+      final node = RouteTreeNode(
+        path,
+        RouteTreeNodeType.component,
+      );
+      node.routes = <RouteDefinition>[route];
+      _nodes.add(node);
+      _hasDefaultRoute = true;
+      return;
     }
-    return params;
+    if (path.startsWith(pathSeparator)) {
+      path = path.substring(1); // trim the leading slash
+    }
+    final pathComponents = path.split(pathSeparator);
+    RouteTreeNode parent;
+    for (var i = 0; i < pathComponents.length; i++) {
+      final component = pathComponents[i];
+      var node = _nodeForComponent(component, parent);
+      if (node == null) {
+        final type = _typeForComponent(component);
+        node = RouteTreeNode(component, type)..parent = parent;
+        if (parent == null) {
+          _nodes.add(node);
+        } else {
+          parent.nodes.add(node);
+        }
+      }
+      if (i == pathComponents.length - 1) {
+        if (node.routes == null) {
+          node.routes = <RouteDefinition>[route];
+        } else {
+          node.routes.add(route);
+        }
+      }
+      parent = node;
+    }
   }
 }

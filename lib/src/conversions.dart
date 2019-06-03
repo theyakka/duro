@@ -9,17 +9,17 @@
 
 /// Provides conversion functions to common types from `dynamic` objects.
 class Conversion {
-  /// Attempts to return the stored value as a boolean. If the value cannot be
-  /// converted, it will return `null`.
+  /// Attempts to return the stored value as a [bool]. If the value cannot be
+  /// converted, it will return false.
   ///
   /// This function will use the following rules:
-  ///  - int values: 1 = true, 0 = false, else = null
-  ///  - string values: 'true', 'yes', '1' = true, 'false', 'no', '0' = false,
-  ///    else = null
-  ///  - bool values will not be converted (obviously)
+  ///  - [int] values: 1 = true, 0 = false, else = false
+  ///  - [String] values: 'true', 'yes', '1' = true, 'false', 'no', '0' = false,
+  ///    else = false
+  ///  - [bool] values will not be converted (obviously)
   static bool boolValue(dynamic val) {
     if (val == null) {
-      return null;
+      return false;
     }
     if (val is bool) {
       return val;
@@ -27,39 +27,39 @@ class Conversion {
       if (val == 0 || val == 1) {
         return val == 1 ? true : false;
       } else {
-        return null;
+        return false;
       }
     } else if (val is String) {
-      final String lowerVal = val.toLowerCase();
+      final lowerVal = val.toLowerCase();
       if (lowerVal == 'true' || lowerVal == 'false') {
         return lowerVal == 'true';
       } else if (lowerVal == 'yes' || lowerVal == 'no') {
         return lowerVal == 'yes';
       } else {
         try {
-          final int intVal = int.tryParse(val);
+          final intVal = int.tryParse(val);
           if (intVal != null && (intVal == 0 || intVal == 1)) {
             return intVal == 1 ? true : false;
           }
-        } catch (_) {
-          return null;
+        } on FormatException catch (_) {
+          return false;
         }
       }
     }
-    return null;
+    return false;
   }
 
-  /// Attempts to return the stored value as an int. If the value cannot be
-  /// converted, it will return `null`.
+  /// Attempts to return the stored value as an [int]. If the value cannot be
+  /// converted, it will return 0.
   ///
   /// This function will use the following rules:
-  ///  - bool values: true = 1, false = 0
-  ///  - string values: will use [int.tryParse(value)]. If the value is
-  ///    invalid, it will return null.
-  ///  - int values will not be converted (obviously)
+  ///  - [bool] values: true = 1, false = 0
+  ///  - [String] values: will use [int.tryParse(value)]. If the value is
+  ///    invalid, it will return 0.
+  ///  - [int] values will not be converted (obviously)
   static int intValue(dynamic val) {
     if (val == null) {
-      return null;
+      return 0;
     }
     if (val is int) {
       return val;
@@ -68,23 +68,24 @@ class Conversion {
     } else if (val is String) {
       try {
         return int.tryParse(val);
-      } catch (ex) {
-        return null;
+      } on FormatException catch (_) {
+        return 0;
       }
     }
-    return null;
+    return 0;
   }
 
-  /// Returns the dynamic value as a string. For completeness sake (and for
+  /// Returns the dynamic value as a [String]. For completeness sake (and for
   /// future compatibility) we've added this function but, for now, it will
-  /// just call `toString()` on the value.
+  /// just call [toString] on the value. If there is an issue returning the
+  /// [String] representation then the value will be null.
   static String stringValue(dynamic val) {
     if (val == null) {
       return null;
     }
     try {
       return val.toString();
-    } catch (ex) {
+    } on FormatException catch (_) {
       return null;
     }
   }

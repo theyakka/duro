@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Tests: Matcher" type="DartTestRunConfigurationType" factoryName="Dart Test" singleton="false">
+    <option name="filePath" value="$PROJECT_DIR$/test/match_test.dart" />
+    <method v="2" />
+  </configuration>
+</component>

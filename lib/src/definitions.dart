@@ -10,50 +10,49 @@
 import 'package:meta/meta.dart';
 
 import 'context.dart';
+import 'handlers.dart';
 
-/// The responder when a route is matched by the router. When a match is successfully
-/// made, the [callback] handler function will be executed. [context] is an optional,
-/// global variable where you can store a value that will be passed to the handler any
-/// time it is executed. [context] is defined  (one time) when you define your route
-/// definition so you shouldn't use it for values that need to change between invocations.
-class Handler {
-  final HandlerFunc callback;
-  final Context context;
-  Handler({@required this.callback, this.context});
-}
+/// The default value for the root path.
+final String defaultRootPath = '/';
 
-/// Function that will execute when a route is matched. If your route contains named
-/// parameters or query parameters (via a query string) then those values will be
-/// present in the parameters map. Parameters values will always be returned as a [List].
-///
-/// The following built-in parameters will be present:
-///  - [RouteParameter.path]: the path value that was matched (what you navigated to)
-///  - [RouteParameter.routePath]: the path that was assigned to the [RouteDefinition]
-typedef dynamic HandlerFunc(Context context);
+/// The character that denotes the start of a query string.
+final String queryPrefix = '?';
 
-/// Define a route for matching. The [path] value defines how your route will be matched
-/// and [handler] is the object that will respond when a match is found.
-class RouteDefinition {
-  RouteDefinition(this.path, {@required this.handler})
+/// The character that separates the components of a path string.
+final String pathSeparator = '/';
+
+/// Define a route for matching. The [path] value defines how your route will
+/// be matched and [handler] is the object that will respond if a match is
+/// found.
+class RouteDefinition<T> {
+  ///
+  RouteDefinition(this.path, {@required this.callback, this.context})
       : nestedDefinitions = <RouteDefinition>[];
 
+  ///
   RouteDefinition.withCallback(
     this.path, {
-    @required HandlerFunc callback,
-    Context context,
-  })  : handler = Handler(callback: callback, context: context),
-        nestedDefinitions = <RouteDefinition>[];
+    @required this.callback,
+    this.context,
+  }) : nestedDefinitions = <RouteDefinition>[];
 
-  // the route path format you want to match against
+  /// the route path format you want to match against
   String path;
-  // the handler that will respond if a url matches the path format
-  Handler handler;
-  // any nested route definitions
+
+  /// the handler that will respond if a url matches the path format
+  HandlerFunc callback;
+
+  /// any nested route definitions
   List<RouteDefinition> nestedDefinitions;
+
+  /// Global context values attached to the route. These values will be passed
+  /// to the callback every time the route is executed.
+  Context context;
 }
 
 ///
 class MatchResult {
+  ///
   MatchResult({
     @required this.route,
     this.matchStatus = MatchStatus.match,
@@ -62,6 +61,15 @@ class MatchResult {
     this.result,
   }) : context = context ?? Context.empty();
 
+  MatchResult.matched({
+    Context context,
+    @required this.route,
+    this.result,
+  })  : matchStatus = MatchStatus.match,
+        statusMessage = null,
+        context = context ?? Context.empty();
+
+  ///
   MatchResult.noMatch({
     Context context,
     this.result,
@@ -80,15 +88,25 @@ class MatchResult {
   bool get wasNotMatched => matchStatus != MatchStatus.match;
 }
 
-/// Whether the matching operation found a match or not. This is not a simple boolean
-/// because we may want to extend the matcher in the future to deal with other match
-/// types.
+/// Whether the matching operation found a match or not. This is not a simple
+/// [bool] because we may want to extend the matcher in the future to deal with
+/// other match types.
 enum MatchStatus {
+  /// There was a match
   match,
+
+  /// There was no match
   noMatch,
 }
 
+/// The type of node in the route tree
 enum RouteTreeNodeType {
+  /// The node is a path component
   component,
+
+  /// The node is a named parameter
   parameter,
+
+  /// The node is a wildcard component
+  wildcard,
 }
